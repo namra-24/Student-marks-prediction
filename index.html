@@ -1,400 +1,314 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Student Marks Predictor</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloom Garden | 10-Stage Infinite Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #1e3a8a 0%, #7e22ce 50%, #db2777 100%);
+            --glass: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --accent: #22d3ee;
+            --text: #ffffff;
+            --soft-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-<!-- Existing ML Library -->
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
 
-<!-- Existing Chart Library -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        .doodle-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            opacity: 0.15;
+            pointer-events: none;
+        }
 
-<style>
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-}
+        .container {
+            width: 95%;
+            max-width: 650px;
+            margin: 40px 10px;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 2rem;
+            box-shadow: var(--soft-shadow);
+            animation: fadeIn 0.8s ease-out;
+        }
 
-body{
-font-family:'Poppins',sans-serif;
-background:linear-gradient(135deg,#0f172a,#1e3a8a,#2563eb);
-color:white;
-min-height:100vh;
-}
+        /* --- GARDEN DISPLAY --- */
+        .garden-box {
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
 
-header{
-text-align:center;
-padding:80px 20px 50px;
-}
+        #garden-display {
+            font-size: 3rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+        }
 
-header h1{
-font-size:3rem;
-font-weight:700;
-margin-bottom:12px;
-}
+        .plant {
+            display: inline-block;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0 0 8px var(--accent));
+        }
 
-header p{
-font-size:1.2rem;
-opacity:.9;
-}
+        .new-growth {
+            animation: popIn 0.5s ease-out;
+            border-bottom: 2px solid var(--accent);
+        }
 
-.container{
-display:flex;
-justify-content:center;
-align-items:stretch;
-gap:30px;
-flex-wrap:wrap;
-padding:20px;
-}
+        /* --- HABIT CARDS --- */
+        .habit-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: 0.4s ease;
+            opacity: 0;
+            transform: translateY(30px);
+        }
 
-.card{
-background:rgba(255,255,255,0.12);
-backdrop-filter:blur(15px);
-border:1px solid rgba(255,255,255,0.15);
-color:white;
-padding:30px;
-border-radius:24px;
-box-shadow:0 20px 40px rgba(0,0,0,0.25);
-width:340px;
-text-align:center;
-transition:.3s ease;
-margin-bottom:20px;
-}
+        .habit-card.visible { opacity: 1; transform: translateY(0); }
 
-.card:hover{
-transform:translateY(-6px);
-}
+        .date-scroller {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding: 10px 0;
+        }
 
-.card h2{
-margin-bottom:20px;
-font-size:1.5rem;
-}
+        .date-scroller::-webkit-scrollbar { height: 4px; }
+        .date-scroller::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
 
-input{
-width:100%;
-padding:14px;
-margin:15px 0;
-border-radius:14px;
-border:none;
-outline:none;
-font-size:16px;
-}
+        .date-bubble {
+            flex: 0 0 45px;
+            height: 55px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.8rem;
+        }
 
-button{
-width:100%;
-padding:14px;
-border:none;
-border-radius:14px;
-background:linear-gradient(135deg,#3b82f6,#2563eb);
-color:white;
-font-size:16px;
-font-weight:600;
-cursor:pointer;
-transition:.3s;
-}
+        .date-bubble.active {
+            background: var(--accent);
+            color: #003e4d;
+            font-weight: bold;
+            box-shadow: 0 0 15px var(--accent);
+        }
 
-button:hover{
-transform:scale(1.03);
-}
+        .add-habit-box { display: flex; gap: 10px; margin-bottom: 30px; }
+        input {
+            flex: 1; padding: 14px; border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0,0,0,0.2); color: white; outline: none;
+        }
+        .main-btn {
+            background: var(--accent); border: none; border-radius: 12px;
+            padding: 0 20px; cursor: pointer; font-weight: 600;
+        }
 
-.result{
-margin-top:20px;
-font-size:1.2rem;
-font-weight:bold;
-color:#facc15;
-}
-
-.chart-container{
-width:90%;
-max-width:900px;
-margin:40px auto;
-background:rgba(255,255,255,0.1);
-backdrop-filter:blur(15px);
-border-radius:25px;
-padding:25px;
-}
-
-canvas{
-background:white;
-border-radius:15px;
-padding:10px;
-}
-
-section{
-width:90%;
-max-width:1000px;
-margin:50px auto;
-background:white;
-color:#111827;
-padding:35px;
-border-radius:25px;
-line-height:1.8;
-}
-
-section h2{
-margin-top:20px;
-margin-bottom:10px;
-color:#1e3a8a;
-}
-
-section ul{
-margin-left:20px;
-}
-
-pre{
-background:#f3f4f6;
-padding:15px;
-border-radius:12px;
-overflow-x:auto;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-margin-top:20px;
-}
-
-th,td{
-padding:12px;
-border:1px solid #ddd;
-text-align:center;
-}
-
-th{
-background:#1e3a8a;
-color:white;
-}
-
-footer{
-text-align:center;
-padding:30px;
-font-size:1rem;
-opacity:.9;
-}
-
-@media(max-width:768px){
-header h1{
-font-size:2.2rem;
-}
-.container{
-flex-direction:column;
-align-items:center;
-}
-.card{
-width:90%;
-}
-}
-</style>
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+    </style>
 </head>
 <body>
 
-<header>
-<h1>Student Marks Prediction</h1>
-<p>AI/ML Project using Linear Regression</p>
-</header>
+    <svg class="doodle-bg" viewBox="0 0 100 100">
+        <circle cx="10" cy="10" r="1" fill="white"/>
+        <path d="M70 10 Q 75 5, 80 10" stroke="white" fill="none" stroke-width="0.3"/>
+    </svg>
 
-<div class="container">
+    <div class="container">
+        <div class="garden-box">
+            <div id="garden-display"></div>
+            <h3 style="margin: 5px 0 0 0;"><span id="growth-label">Dormant</span> (Level <span id="level-count">1</span>)</h3>
+            <p style="font-size: 0.75rem; opacity: 0.7;">Complete 10 steps to add a permanent flower!</p>
+        </div>
 
-<div class="card">
-<h2>Predict Your Marks</h2>
-<input type="number" id="hours" placeholder="Enter study hours">
-<button onclick="predictMarks()">Predict</button>
-<div class="result" id="result"></div>
-</div>
+        <div class="add-habit-box">
+            <input type="text" id="habitInput" placeholder="New Habit Name...">
+            <button class="main-btn" onclick="addHabit()">Plant</button>
+        </div>
 
-<div class="card">
-<h2>Machine Learning Status</h2>
-<p id="ml-status">Training ML Model...</p>
-<p id="accuracy"></p>
-</div>
+        <div id="habitList"></div>
+    </div>
 
-</div>
+    <script>
+        let habits = JSON.parse(localStorage.getItem('bloom_infinite_v4')) || [];
 
-<div class="chart-container">
-<canvas id="predictionChart"></canvas>
-</div>
+        // EXACT 10 STAGES FROM PREVIOUS CODE
+        const growthStages = [
+            { emoji: '🌑', label: 'Dormant' },
+            { emoji: '🪴', label: 'Sown' },
+            { emoji: '🌱', label: 'Sprout' },
+            { emoji: '🌿', label: 'Developing' },
+            { emoji: '🍃', label: 'Leafy' },
+            { emoji: '🎍', label: 'Tall' },
+            { emoji: '🌳', label: 'Strong' },
+            { emoji: '✨', label: 'Sparkling' },
+            { emoji: '🌸', label: 'Blooming' },
+            { emoji: '🌺', label: 'Full Bloom' }
+        ];
 
-<section>
-<h2>Introduction</h2>
-<p>This project predicts student marks based on study hours using Linear Regression.</p>
+        function getDatesInMonth() {
+            const now = new Date();
+            const dates = [];
+            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            for (let i = 1; i <= daysInMonth; i++) {
+                dates.push(new Date(now.getFullYear(), now.getMonth(), i).toISOString().split('T')[0]);
+            }
+            return dates;
+        }
+        const monthDates = getDatesInMonth();
 
-<h2>Objective</h2>
-<ul>
-<li>Understand ML basics</li>
-<li>Predict marks</li>
-<li>Visualize relationship</li>
-</ul>
+        function addHabit() {
+            const input = document.getElementById('habitInput');
+            if (!input.value.trim()) return;
+            habits.push({ name: input.value.trim(), completedDates: [] });
+            input.value = "";
+            saveAndRender();
+        }
 
-<h2>Linear Regression</h2>
-<p>Formula: <b>y = mx + b</b></p>
-<p>m = slope, b = intercept</p>
+        function toggleDate(hIdx, date) {
+            const habit = habits[hIdx];
+            const dIdx = habit.completedDates.indexOf(date);
+            dIdx > -1 ? habit.completedDates.splice(dIdx, 1) : habit.completedDates.push(date);
+            saveAndRender();
+        }
 
-<h2>Dataset</h2>
-<pre>
-Hours : 1 2 3 4 5 6 7 8
-Marks : 35 40 50 55 65 70 75 85
-</pre>
+        function updateGarden() {
+            let totalCompletions = 0;
+            habits.forEach(h => totalCompletions += h.completedDates.length);
 
-<h2>Python Code</h2>
-<pre>
-from sklearn.linear_model import LinearRegression
-model = LinearRegression()
-model.fit(X, y)
-</pre>
+            const stagesCount = growthStages.length; // 10
+            const fullPlantsCount = Math.floor(totalCompletions / stagesCount);
+            const currentStageIndex = totalCompletions % stagesCount;
 
-<h2>Evaluation</h2>
-<p>R² Score measures accuracy of model.</p>
+            const display = document.getElementById('garden-display');
+            display.innerHTML = '';
 
-<h2>Conclusion</h2>
-<p>This project successfully demonstrates the application of Linear Regression in educational data analysis. The model provides accurate predictions and valuable insights into the relationship between study time and academic performance. The high R² score validates the model's effectiveness, making it a useful tool for students and educators to understand and optimize study patterns for better academic outcomes.</p>
+            // 1. Render all fully grown flowers (The Loops)
+            for (let i = 0; i < fullPlantsCount; i++) {
+                const span = document.createElement('span');
+                span.className = 'plant';
+                span.innerText = '🌺'; 
+                display.appendChild(span);
+            }
 
-<h2>Future Scope</h2>
-<ul>
-<li>This project can be extended in several directions:</li>
-<li>1.Multiple Linear Regression: Include additional features such as previous grades, attendance, and participation</li>
-<li>2.Advanced Algorithms: Implement polynomial regression, decision trees, or neural networks for complex patterns</li>
-<li>3.Data Validation: Add more robust data validation and outlier detection for uploaded datasets</li>
-<li>4.Personalized Recommendations: Provide customized study plans based on individual learning curves</li>
-<li>5.Cross-validation: Implement k-fold cross-validation to ensure model robustness</li>
-<li>6.Export Features: Download predictions, reports, and trained model parameters as PDF/Excel</li>
-<li>7.Mobile Application: Develop a mobile app for students to track study hours and predict performance</li>
-</ul>
+            // 2. Render the current growing plant
+            if (habits.length > 0 || currentStageIndex > 0) {
+                const activeSpan = document.createElement('span');
+                activeSpan.className = 'plant new-growth';
+                activeSpan.id = 'active-plant';
+                activeSpan.innerText = growthStages[currentStageIndex].emoji;
+                display.appendChild(activeSpan);
+                document.getElementById('growth-label').innerText = growthStages[currentStageIndex].label;
+            } else {
+                display.innerHTML = '<span class="plant">🌑</span>';
+                document.getElementById('growth-label').innerText = 'Dormant';
+            }
 
-<h2>AI/ML PROJECT</h2>
-<p>
-A machine learning application using Linear Regression to predict student marks based on study hours.
-This project demonstrates supervised learning and regression analysis.
-</p>
+            document.getElementById('level-count').innerText = fullPlantsCount + 1;
+        }
 
-<h2>Problem Statement</h2>
-<p>
-Understanding the relationship between study time and academic performance is crucial.
-This project predicts exam marks based on study hours.
-</p>
+        function renderHabits() {
+            const list = document.getElementById('habitList');
+            list.innerHTML = '';
+            habits.forEach((habit, hIdx) => {
+                const card = document.createElement('div');
+                card.className = 'habit-card';
+                const bubbles = monthDates.map(date => {
+                    const active = habit.completedDates.includes(date) ? 'active' : '';
+                    return `<div class="date-bubble ${active}" onclick="toggleDate(${hIdx}, '${date}')">
+                                <span style="font-size:0.6rem; opacity:0.6;">Day</span>
+                                ${date.split('-')[2]}
+                            </div>`;
+                }).join('');
 
-<h2>Trained Model Parameters</h2>
-<pre>
-Equation: y = 8.19x + 19.96
-Slope (m): 8.1899
-Intercept (b): 19.9620
-</pre>
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <strong>${habit.name}</strong>
+                        <span onclick="deleteHabit(${hIdx})" style="cursor:pointer; opacity:0.4;">✕</span>
+                    </div>
+                    <div class="date-scroller">${bubbles}</div>`;
+                list.appendChild(card);
+            });
+            initScrollObserver();
+        }
 
-<h2>Dataset Table</h2>
-<table>
-<tr><th>Study Hours</th><th>Marks</th></tr>
-<tr><td>2.5</td><td>40</td></tr>
-<tr><td>3</td><td>45</td></tr>
-<tr><td>4.5</td><td>58</td></tr>
-<tr><td>5.5</td><td>65</td></tr>
-<tr><td>6</td><td>70</td></tr>
-<tr><td>7</td><td>78</td></tr>
-<tr><td>8</td><td>85</td></tr>
-<tr><td>9</td><td>92</td></tr>
-</table>
+        function deleteHabit(idx) {
+            if(confirm("Delete this habit?")) {
+                habits.splice(idx, 1);
+                saveAndRender();
+            }
+        }
 
-</section>
+        function saveAndRender() {
+            localStorage.setItem('bloom_infinite_v4', JSON.stringify(habits));
+            renderHabits();
+            updateGarden();
+        }
 
-<footer>
-<p>Made with ❤️ for ML Project</p>
-</footer>
+        function initScrollObserver() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.habit-card').forEach(c => observer.observe(c));
+        }
 
-<script>
-let m=6.5;
-let b=30;
+        // Initialize
+        renderHabits();
+        updateGarden();
 
-const hoursData=[1,2,3,4,5,6,7,8];
-const marksData=[35,40,50,55,65,70,75,85];
-
-let model;
-let trained=false;
-
-const ctx=document.getElementById('predictionChart').getContext('2d');
-
-const predictionChart=new Chart(ctx,{
-type:'line',
-data:{
-labels:hoursData,
-datasets:[
-{
-label:'Actual Marks',
-data:marksData,
-fill:false,
-tension:0.3
-},
-{
-label:'Predicted Mark',
-data:[],
-fill:false,
-tension:0.3
-}
-]
-},
-options:{
-responsive:true
-}
-});
-
-async function trainMLModel(){
-const xs=tf.tensor2d(hoursData,[hoursData.length,1]);
-const ys=tf.tensor2d(marksData,[marksData.length,1]);
-
-model=tf.sequential();
-model.add(tf.layers.dense({
-units:1,
-inputShape:[1]
-}));
-
-model.compile({
-optimizer:tf.train.sgd(0.01),
-loss:tf.losses.meanSquaredError
-});
-
-await model.fit(xs,ys,{epochs:300});
-
-trained=true;
-document.getElementById("ml-status").innerText="ML Model Trained Successfully ✅";
-document.getElementById("accuracy").innerText="Training Accuracy: High";
-}
-
-trainMLModel();
-
-async function predictMarks(){
-let hours=document.getElementById("hours").value;
-
-if(hours===""){
-document.getElementById("result").innerText="Please enter hours";
-return;
-}
-
-if(trained){
-const prediction=model.predict(
-tf.tensor2d([parseFloat(hours)],[1,1])
-);
-
-const marks=(await prediction.data())[0];
-
-document.getElementById("result").innerText=
-"Predicted Marks (ML): "+marks.toFixed(2);
-
-predictionChart.data.datasets[1].data=[null,null,null,null,null,null,null,null];
-
-if(hours>=1 && hours<=8){
-predictionChart.data.datasets[1].data[hours-1]=marks;
-}
-
-predictionChart.update();
-}else{
-let marks=m*hours+b;
-document.getElementById("result").innerText=
-"Predicted Marks: "+marks.toFixed(2);
-}
-}
-</script>
-
+        // Auto-scroll scrollers to today
+        window.onload = () => {
+            const today = new Date().getDate();
+            setTimeout(() => {
+                document.querySelectorAll('.date-scroller').forEach(s => {
+                    s.scrollLeft = (today - 3) * 55;
+                });
+            }, 300);
+        };
+    </script>
 </body>
 </html>
